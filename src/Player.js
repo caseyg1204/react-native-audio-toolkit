@@ -59,7 +59,6 @@ class Player extends EventEmitter {
     if (!info) {
       return;
     }
-    console.log("infoinfoinfoinfoinfoinfoinfo", info);
     this._duration = info.duration;
     this._position = info.position;
     this._lastSync = Date.now();
@@ -67,7 +66,6 @@ class Player extends EventEmitter {
 
   _updateState(err, state, results) {
     this._state = err ? MediaStates.ERROR : state;
-    console.log(state, results);
     if (err || !results) {
       return;
     }
