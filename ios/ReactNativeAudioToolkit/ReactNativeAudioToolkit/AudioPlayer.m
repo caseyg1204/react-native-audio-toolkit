@@ -101,7 +101,7 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
         callback(@[dict]);
         return;
     }
-        
+    
     // Try to find the correct file
     NSURL *url = [self findUrlForPath:path];
     if (!url) {
@@ -133,7 +133,7 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
     
     // Initialize player
     ReactPlayer* player = [[ReactPlayer alloc]
-                        initWithPlayerItem:item];
+                           initWithPlayerItem:item];
     
     // If successful, check options and add to player pool
     if (player) {
@@ -142,7 +142,7 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
         if (autoDestroy) {
             player.autoDestroy = [autoDestroy boolValue];
         }
-
+        
         [[self playerPool] setObject:player forKey:playerId];
     } else {
         NSString *errMsg = [NSString stringWithFormat:@"Could not initialize player, error: %@", error];
@@ -152,7 +152,7 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
         return;
     }
     
-   // Prepare the player
+    // Prepare the player
     // Wait until player is ready
     while (player.currentItem.status == AVPlayerStatusUnknown) {
         [NSThread sleepForTimeInterval:0.01f];
@@ -171,7 +171,7 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
     
     
     Float64 durationSeconds = 0;
-    while (durationSeconds < 10){
+    while (durationSeconds == 0){
         NSValue *val = player.currentItem.loadedTimeRanges.firstObject;
         CMTimeRange timeRange;
         [val getValue:&timeRange];
@@ -214,6 +214,15 @@ RCT_EXPORT_METHOD(seek:(nonnull NSNumber*)playerId withPos:(nonnull NSNumber*)po
     
     [player cancelPendingPrerolls];
     
+    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSDictionary* dict;
+    
+    if (duration > 0) {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    }
+    
     if (position >= 0) {
         NSLog(@"%@", position);
         if (position == 0) {
@@ -222,15 +231,13 @@ RCT_EXPORT_METHOD(seek:(nonnull NSNumber*)playerId withPos:(nonnull NSNumber*)po
              toleranceBefore:kCMTimeZero // for precise positioning
              toleranceAfter:kCMTimeZero
              completionHandler:^(BOOL finished) {
-                 callback(@[[NSNull null], @{
-                                             @"position": @(CMTimeGetSeconds(player.currentTime) * 1000)}]);
+                 callback(@[[NSNull null], dict]);
              }];
         } else {
             [player.currentItem
              seekToTime:CMTimeMakeWithSeconds([position doubleValue] / 1000, 60000)
              completionHandler:^(BOOL finished) {
-                 callback(@[[NSNull null], @{
-                                             @"position": @(CMTimeGetSeconds(player.currentTime) * 1000)}]);
+                 callback(@[[NSNull null], dict]);
              }];
         }
     }
@@ -248,22 +255,17 @@ RCT_EXPORT_METHOD(play:(nonnull NSNumber*)playerId withCallback:(RCTResponseSend
     
     [player play];
     
-//    NSDate* duration = [[NSDate alloc] initWithTimeIntervalSinceNow:10];
-    CMTime duration = CMTimeMake(10, 10);
+    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSDictionary* dict;
     
-//    NSLog([NSDateFormatter player.currentItem.asset.duration to])
-    
-    duration = player.currentItem.asset.duration;
-    if (CMTIME_IS_INDEFINITE(duration)) {
-        duration =  CMTimeMake(10, 10);
+    if (duration > 0) {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
     }
+    callback(@[[NSNull null], dict]);
     
-    Float64 seconds = CMTimeGetSeconds(duration);
     
-//    NSNumber * duration = player.currentItem.asset.duration || 1;
-    callback(@[[NSNull null], @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)}]);
-    
-
 }
 
 RCT_EXPORT_METHOD(set:(nonnull NSNumber*)playerId withOpts:(NSDictionary*)options withCallback:(RCTResponseSenderBlock)callback) {
@@ -306,8 +308,15 @@ RCT_EXPORT_METHOD(stop:(nonnull NSNumber*)playerId withCallback:(RCTResponseSend
         [player.currentItem seekToTime:CMTimeMakeWithSeconds(0.0, 60000)];
     }
     
-    callback(@[[NSNull null], @{@"duration": @(CMTimeGetSeconds(player.currentItem.asset.duration) * 1000),
-                                @"position": @(CMTimeGetSeconds(player.currentTime) * 1000)}]);
+    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSDictionary* dict;
+    
+    if (duration > 0) {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    }
+    callback(@[[NSNull null], dict]);
 }
 
 RCT_EXPORT_METHOD(pause:(nonnull NSNumber*)playerId withCallback:(RCTResponseSenderBlock)callback) {
@@ -321,9 +330,16 @@ RCT_EXPORT_METHOD(pause:(nonnull NSNumber*)playerId withCallback:(RCTResponseSen
     }
     
     [player pause];
-
-    callback(@[[NSNull null], @{
-                                @"position": @(CMTimeGetSeconds(player.currentTime) * 1000)}]);
+    
+    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSDictionary* dict;
+    
+    if (duration > 0) {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    }
+    callback(@[[NSNull null], dict]);
 }
 
 RCT_EXPORT_METHOD(resume:(nonnull NSNumber*)playerId withCallback:(RCTResponseSenderBlock)callback) {
@@ -376,9 +392,10 @@ RCT_EXPORT_METHOD(resume:(nonnull NSNumber*)playerId withCallback:(RCTResponseSe
     if (player) {
         [player pause];
         [[self playerPool] removeObjectForKey:playerId];
-
+        
     }
 }
 
 
 @end
+
