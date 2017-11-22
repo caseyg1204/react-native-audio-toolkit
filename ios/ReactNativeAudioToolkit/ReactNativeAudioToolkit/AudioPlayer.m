@@ -171,7 +171,9 @@ RCT_EXPORT_METHOD(prepare:(nonnull NSNumber*)playerId
     
     
     Float64 durationSeconds = 0;
-    while (durationSeconds == 0){
+    NSNumber* duration = @(CMTimeGetSeconds(player.currentItem.asset.duration));
+    
+    while (durationSeconds == 0 && ![duration isEqualToNumber:[NSDecimalNumber notANumber]]){
         NSValue *val = player.currentItem.loadedTimeRanges.firstObject;
         CMTimeRange timeRange;
         [val getValue:&timeRange];
@@ -213,14 +215,13 @@ RCT_EXPORT_METHOD(seek:(nonnull NSNumber*)playerId withPos:(nonnull NSNumber*)po
     }
     
     [player cancelPendingPrerolls];
-    
-    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSNumber* duration = @(CMTimeGetSeconds(player.currentItem.asset.duration));
     NSDictionary* dict;
     
-    if (duration > 0) {
-        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
-    } else {
+    if ([duration isEqualToNumber:[NSDecimalNumber notANumber]]) {
         dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": duration};
     }
     
     if (position >= 0) {
@@ -255,13 +256,13 @@ RCT_EXPORT_METHOD(play:(nonnull NSNumber*)playerId withCallback:(RCTResponseSend
     
     [player play];
     
-    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSNumber* duration = @(CMTimeGetSeconds(player.currentItem.asset.duration));
     NSDictionary* dict;
     
-    if (duration > 0) {
-        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
-    } else {
+    if ([duration isEqualToNumber:[NSDecimalNumber notANumber]]) {
         dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": duration};
     }
     callback(@[[NSNull null], dict]);
     
@@ -308,13 +309,13 @@ RCT_EXPORT_METHOD(stop:(nonnull NSNumber*)playerId withCallback:(RCTResponseSend
         [player.currentItem seekToTime:CMTimeMakeWithSeconds(0.0, 60000)];
     }
     
-    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSNumber* duration = @(CMTimeGetSeconds(player.currentItem.asset.duration));
     NSDictionary* dict;
     
-    if (duration > 0) {
-        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
-    } else {
+    if ([duration isEqualToNumber:[NSDecimalNumber notANumber]]) {
         dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": duration};
     }
     callback(@[[NSNull null], dict]);
 }
@@ -331,13 +332,13 @@ RCT_EXPORT_METHOD(pause:(nonnull NSNumber*)playerId withCallback:(RCTResponseSen
     
     [player pause];
     
-    double duration = CMTimeGetSeconds(player.currentItem.asset.duration) * 1000;
+    NSNumber* duration = @(CMTimeGetSeconds(player.currentItem.asset.duration));
     NSDictionary* dict;
     
-    if (duration > 0) {
-        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": @(duration)};
-    } else {
+    if ([duration isEqualToNumber:[NSDecimalNumber notANumber]]) {
         dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000)};
+    } else {
+        dict = @{@"position": @(CMTimeGetSeconds(player.currentTime) * 1000), @"duration": duration};
     }
     callback(@[[NSNull null], dict]);
 }
